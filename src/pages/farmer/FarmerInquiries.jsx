@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import AlertMessage from "../../components/AlertMessage";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import InquiryThread from "../../components/InquiryThread";
 import { inquiryService } from "../../services/inquiryService";
 
 function FarmerInquiries() {
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [openId, setOpenId] = useState(null);
 
   async function loadInquiries() {
     const response = await inquiryService.getFarmerInquiries();
@@ -38,7 +40,11 @@ function FarmerInquiries() {
               </div>
               <p>{inquiry.message}</p>
               <p className="small text-muted mb-3">{inquiry.buyer_name} · {inquiry.buyer_phone}</p>
-              <button className="btn btn-sm btn-outline-success" onClick={() => markAnswered(inquiry.id)}>Mark answered</button>
+              <button className="btn btn-sm btn-outline-success me-2" onClick={() => setOpenId(openId === inquiry.id ? null : inquiry.id)}>
+                {openId === inquiry.id ? "Hide conversation" : "Reply / conversation"}
+              </button>
+              <button className="btn btn-sm btn-outline-secondary" onClick={() => markAnswered(inquiry.id)}>Mark answered</button>
+              {openId === inquiry.id && <InquiryThread inquiryId={inquiry.id} onReplied={loadInquiries} />}
             </div>
           </div>
         ))}
