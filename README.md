@@ -152,3 +152,13 @@ Use these after loading the backend seed data. All use `password123`.
 - Admin: `admin@farmconnect.test`
 - Farmer: `farmer1@farmconnect.test`
 - Buyer: `buyer1@farmconnect.test`
+
+## New Features (assignment extension)
+
+Added on top of the original commit `03456156bb6ff0a98588589ef1e898025b945608`. They need the matching backend branch and its updated database (see the backend README).
+
+- **Favorites (database-backed):** "Save favorite" on a product page now calls the API instead of `localStorage`; `/buyer/favorites` lists and removes favorites, and they follow the buyer to any browser.
+- **Product reviews:** star rating and comment on the product page. The form appears only for buyers with a completed order for that product.
+- **Inquiry conversations:** buyers (`/buyer/inquiries`) and farmers (`/farmer/inquiries`) can exchange replies on each inquiry.
+
+Setup: `npm install`, `cp .env.example .env`, then `npm run dev` (http://localhost:5173) with the backend running on port 5000.
