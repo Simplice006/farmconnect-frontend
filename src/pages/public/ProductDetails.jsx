@@ -6,6 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 import { productService } from "../../services/productService";
 import { orderService } from "../../services/orderService";
 import { inquiryService } from "../../services/inquiryService";
+import { favoriteService } from "../../services/favoriteService";
+import ProductReviews from "../../components/ProductReviews";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatDate } from "../../utils/formatDate";
 
@@ -20,6 +22,7 @@ function ProductDetails() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     productService.getProduct(id)
@@ -27,6 +30,14 @@ function ProductDetails() {
       .catch(() => setError("Product not found."))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    // Ask the API whether this buyer already saved the product.
+    if (user?.role !== "buyer") return;
+    favoriteService.getFavorites()
+      .then((response) => setIsFavorite(response.data.favorites.some((item) => String(item.product_id) === String(id))))
+      .catch(() => {});
+  }, [id, user]);
 
   async function handleOrderSubmit(event) {
     event.preventDefault();
@@ -56,14 +67,23 @@ function ProductDetails() {
     }
   }
 
-  function saveFavorite() {
-    const favorites = JSON.parse(localStorage.getItem("farmconnect_favorites") || "[]");
+  async function toggleFavorite() {
+    setNotice("");
+    setError("");
 
-    if (!favorites.includes(product.id)) {
-      localStorage.setItem("farmconnect_favorites", JSON.stringify([...favorites, product.id]));
+    try {
+      if (isFavorite) {
+        await favoriteService.removeFavorite(product.id);
+        setIsFavorite(false);
+        setNotice("Product removed from favorites.");
+      } else {
+        await favoriteService.addFavorite(product.id);
+        setIsFavorite(true);
+        setNotice("Product saved to favorites.");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to update favorites.");
     }
-
-    setNotice("Product saved to favorites.");
   }
 
   if (loading) return <LoadingSpinner />;
@@ -90,7 +110,7 @@ function ProductDetails() {
             <dt className="col-5">Harvest date</dt><dd className="col-7">{formatDate(product.harvest_date)}</dd>
             <dt className="col-5">Farmer</dt><dd className="col-7">{product.farmer_name}</dd>
           </dl>
-          {user?.role === "buyer" && <button className="btn btn-outline-success" onClick={saveFavorite}>Save favorite</button>}
+          {user?.role === "buyer" && <button className={`btn ${isFavorite ? "btn-success" : "btn-outline-success"}`} onClick={toggleFavorite}>{isFavorite ? "Saved ★ (remove)" : "Save favorite"}</button>}
         </div>
       </div>
       {user?.role === "buyer" && (
@@ -120,6 +140,7 @@ function ProductDetails() {
           </div>
         </div>
       )}
+      <ProductReviews productId={id} />
     </div>
   );
 }
